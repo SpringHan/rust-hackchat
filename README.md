@@ -6,6 +6,8 @@ A client library for Hack.chat.
 
 This library allows you to make custom clients and bots for Hack.chat using Rust.
 
+This repository is an adaptation for the new rust version.
+
 ## Example
 
 Here's an example that connects to a channel and prints the chat logs to the console.

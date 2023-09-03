@@ -1,6 +1,6 @@
 [package]
 name = "hackchat"
-version = "0.1.4"
+version = "0.1.5"
 authors = ["Gökberk Yaltıraklı <webdosusb@gmail.com>"]
 description = "Hack.chat client library"
 license = "MIT"
@@ -8,9 +8,10 @@ keywords = ["hack", "chat", "hackchat", "api", "bot"]
 categories = ["api-bindings"]
 repository = "https://github.com/gkbrk/rust-hackchat"
 documentation = "https://docs.rs/hackchat"
+edition = "2021"
 
 
 [dependencies]
-websocket = "0.17"
+websocket = "0.26.5"
 serde_json = "0.9"
 rustc-serialize = "0.3"

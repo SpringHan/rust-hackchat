@@ -24,23 +24,19 @@
 //! }
 //! ```
 
-extern crate websocket;
 #[macro_use] extern crate serde_json;
-extern crate rustc_serialize;
 
 use std::thread;
+use std::time::Duration;
+use std::net::TcpStream;
 
 use rustc_serialize::json;
 
-use websocket::{Client, Message, WebSocketStream};
+use websocket::client::ClientBuilder;
+use websocket::Message;
 use websocket::message::Type;
-use websocket::client::request::Url;
-
-use websocket::sender::Sender;
-use websocket::receiver::Receiver;
-
-use websocket::ws::sender::Sender as SenderTrait;
-use websocket::ws::receiver::Receiver as ReceiverTrait;
+use websocket::sender::Writer;
+use websocket::receiver::Reader;
 
 use std::sync::Arc;
 use std::sync::Mutex;
@@ -50,8 +46,8 @@ use std::sync::Mutex;
 pub struct ChatClient {
     nick: String,
     channel: String,
-    sender: Arc<Mutex<Sender<WebSocketStream>>>,
-    receiver: Arc<Mutex<Receiver<WebSocketStream>>>,
+    sender: Arc<Mutex<Writer<TcpStream>>>,
+    receiver: Arc<Mutex<Reader<TcpStream>>>,
 }
 
 impl ChatClient {
@@ -62,12 +58,12 @@ impl ChatClient {
     /// // Joins ?programming with the nick "WikiBot"
     /// ```
     pub fn new(nick: &str, channel: &str) -> ChatClient {
-        let url = Url::parse("wss://hack.chat/chat-ws").unwrap();
-        let request = Client::connect(url).unwrap();
-        let response = request.send().unwrap();
-        
-        let client = response.begin();
-        let (mut sender, receiver) = client.split();
+        let client = ClientBuilder::new("wss://hack.chat/chat-ws")
+            .unwrap()
+            // .connect(None)
+            .connect_insecure()
+            .unwrap();
+        let (receiver, mut sender) = client.split().unwrap();
 
         let join_packet = json!({
             "cmd": "join",
@@ -83,6 +79,11 @@ impl ChatClient {
             sender: Arc::new(Mutex::new(sender)),
             receiver: Arc::new(Mutex::new(receiver))
         };
+    }
+
+    /// Get the current channel.
+    pub fn get_channel(&self) -> String {
+        self.channel.clone()
     }
 
     /// Sends a message to the current channel.
@@ -130,7 +131,8 @@ impl ChatClient {
         let mut chat_clone = self.clone();
         thread::spawn(move|| {
             loop {
-                thread::sleep_ms(60 * 1000);
+                // TODO: Replace with Duration
+                thread::sleep(Duration::from_millis(60 * 1000));
                 chat_clone.send_ping();
             }
         });
@@ -165,7 +167,7 @@ impl Iterator for ChatClient {
     fn next(&mut self) -> Option<ChatEvent> {
         loop {
             let message: Message = match self.receiver.lock().unwrap().recv_message() {
-                Ok(message) => message,
+                Ok(message) => message.into(),
                 Err(e) => {
                     println!("{}", e);
                     continue;
