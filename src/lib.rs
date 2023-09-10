@@ -138,6 +138,11 @@ impl ChatClient {
         });
     }
 
+    /// Close client.
+    pub fn close(&mut self) {
+        self.sender.lock().unwrap().shutdown_all().unwrap();
+    }
+
     /// Returns an iterator of hack.chat events such as messages.
     ///
     /// #Examples
